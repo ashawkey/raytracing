@@ -19,7 +19,7 @@ Example for a mesh normal renderer:
 python renderer.py example.ply
 ```
 
-[video placeholder]
+https://user-images.githubusercontent.com/25863658/183238748-7ac82808-6cd3-4bb6-867a-9c22f8e3f7dd.mp4
 
 Example code:
 
