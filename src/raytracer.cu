@@ -43,14 +43,14 @@ public:
     }
 
     // accept torch tensor (gpu) to init
-    void trace(at::Tensor rays_o, at::Tensor rays_d) {
+    void trace(at::Tensor rays_o, at::Tensor rays_d, at::Tensor positions, at::Tensor normals, at::Tensor depth) {
 
         // must be contiguous, float, cuda, shape [N, 3]. check in torch side.
 
         const uint32_t n_elements = rays_o.size(0);
         cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-        triangle_bvh->ray_trace_gpu(n_elements, rays_o.data_ptr<float>(), rays_d.data_ptr<float>(), triangles_gpu.data(), stream);
+        triangle_bvh->ray_trace_gpu(n_elements, rays_o.data_ptr<float>(), rays_d.data_ptr<float>(), positions.data_ptr<float>(), normals.data_ptr<float>(), depth.data_ptr<float>(), triangles_gpu.data(), stream);
     }
 
     std::vector<Triangle> triangles_cpu;

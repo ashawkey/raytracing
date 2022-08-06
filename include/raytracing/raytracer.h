@@ -18,7 +18,7 @@ public:
     RayTracer() {}
     virtual ~RayTracer() {}
 
-    virtual void trace(at::Tensor rays_o, at::Tensor rays_d) = 0;
+    virtual void trace(at::Tensor rays_o, at::Tensor rays_d, at::Tensor positions, at::Tensor normals, at::Tensor depth) = 0;
 };
 
 // function to create an implementation of raytracer

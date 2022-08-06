@@ -51,7 +51,7 @@ protected:
 
 public:
     virtual void build(std::vector<Triangle>& triangles, uint32_t n_primitives_per_leaf) = 0;
-    virtual void ray_trace_gpu(uint32_t n_elements, float* gpu_positions_raw, float* gpu_directions_raw, const Triangle* gpu_triangles, cudaStream_t stream) = 0;
+    virtual void ray_trace_gpu(uint32_t n_elements, const float* rays_o, const float* rays_d, float* positions, float* normals, float* depth, const Triangle* gpu_triangles, cudaStream_t stream) = 0;
 
     // KIUI: not supported now.
     // virtual void signed_distance_gpu(uint32_t n_elements, EMeshSdfMode mode, const Eigen::Vector3f* gpu_positions, float* gpu_distances, const Triangle* gpu_triangles, bool use_existing_distances_as_upper_bounds, cudaStream_t stream) = 0;

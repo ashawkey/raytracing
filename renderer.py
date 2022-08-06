@@ -156,18 +156,28 @@ class GUI:
 
 
     def prepare_buffer(self, outputs):
-        positions, normals = outputs
+        positions, normals, depth = outputs
+
         if self.mode == 'position':
             # outputs is the actual 3D point, how to visualize them ???
             # naive normalize...
-            positions = positions.detach().cpu().numpy()
+            positions = positions.detach().cpu().numpy().reshape(self.H, self.W, 3)
             positions = (positions - positions.min(axis=0, keepdims=True)) / (positions.max(axis=0, keepdims=True) - positions.min(axis=0, keepdims=True) + 1e-8)
             return positions
         elif self.mode == 'normal':
             # already normalized to [-1, 1]
-            normals = normals.detach().cpu().numpy()
+            normals = normals.detach().cpu().numpy().reshape(self.H, self.W, 3)
             normals = (normals + 1) * 0.5
             return normals
+        elif self.mode == 'depth':
+            depth = depth.detach().cpu().numpy().reshape(self.H, self.W, 1)
+            mask = depth >= 10
+            mn = depth[~mask].min()
+            mx = depth[~mask].max()
+            depth = (depth - mn) / (mx - mn + 1e-5)
+            depth[mask] = 0
+            depth = depth.repeat(3, -1)
+            return depth
         else:
             raise NotImplementedError()
 
@@ -185,7 +195,7 @@ class GUI:
             rays = get_rays(pose, self.cam.intrinsics, self.H, self.W, -1)
             rays_o = rays['rays_o'].contiguous().view(-1, 3)
             rays_d = rays['rays_d'].contiguous().view(-1, 3)
-            outputs = self.RT.trace(rays_o, rays_d)
+            outputs = self.RT.trace(rays_o, rays_d, inplace=False)
             
             ender.record()
             torch.cuda.synchronize()
@@ -242,7 +252,7 @@ class GUI:
                     self.mode = app_data
                     self.need_update = True
                 
-                dpg.add_combo(('position', 'normal'), label='mode', default_value=self.mode, callback=callback_change_mode)
+                dpg.add_combo(('position', 'normal', 'depth'), label='mode', default_value=self.mode, callback=callback_change_mode)
 
                 # # bg_color picker
                 # def callback_change_bg(sender, app_data):

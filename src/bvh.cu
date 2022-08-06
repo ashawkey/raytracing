@@ -135,7 +135,7 @@ constexpr float MAX_DIST_SQ = MAX_DIST*MAX_DIST;
 // __global__ void signed_distance_watertight_kernel(uint32_t n_elements, const Vector3f* __restrict__ positions, const TriangleBvhNode* __restrict__ bvhnodes, const Triangle* __restrict__ triangles, float* __restrict__ distances, bool use_existing_distances_as_upper_bounds = false);
 // __global__ void signed_distance_raystab_kernel(uint32_t n_elements, const Vector3f* __restrict__ positions, const TriangleBvhNode* __restrict__ bvhnodes, const Triangle* __restrict__ triangles, float* __restrict__ distances, bool use_existing_distances_as_upper_bounds = false);
 // __global__ void unsigned_distance_kernel(uint32_t n_elements, const Vector3f* __restrict__ positions, const TriangleBvhNode* __restrict__ bvhnodes, const Triangle* __restrict__ triangles, float* __restrict__ distances, bool use_existing_distances_as_upper_bounds = false);
-__global__ void raytrace_kernel(uint32_t n_elements, Vector3f* __restrict__ positions, Vector3f* __restrict__ directions, const TriangleBvhNode* __restrict__ nodes, const Triangle* __restrict__ triangles);
+__global__ void raytrace_kernel(uint32_t n_elements, const Vector3f* __restrict__ rays_o, const Vector3f* __restrict__ rays_d, Vector3f* __restrict__ positions, Vector3f* __restrict__ normals, float* __restrict__ depth, const TriangleBvhNode* __restrict__ nodes, const Triangle* __restrict__ triangles);
 
 struct DistAndIdx {
     float dist;
@@ -466,22 +466,27 @@ public:
     //     }
     // }
 
-    void ray_trace_gpu(uint32_t n_elements, float* gpu_positions_raw, float* gpu_directions_raw, const Triangle* gpu_triangles, cudaStream_t stream) override {
+    void ray_trace_gpu(uint32_t n_elements, const float* rays_o, const float* rays_d, float* positions, float* normals, float* depth, const Triangle* gpu_triangles, cudaStream_t stream) override {
 
         // cast float* to Vector3f*
-        Vector3f* gpu_positions = (Vector3f*)(gpu_positions_raw);
-        Vector3f* gpu_directions = (Vector3f*)(gpu_directions_raw);
+        const Vector3f* rays_o_vec = (const Vector3f*)rays_o;
+        const Vector3f* rays_d_vec = (const Vector3f*)rays_d;
+        Vector3f* positions_vec = (Vector3f*)positions;
+        Vector3f* normals_vec = (Vector3f*)normals;
 
 // #ifdef NGP_OPTIX
 //         if (m_optix.available) {
-//             m_optix.raytrace->invoke({gpu_positions, gpu_directions, gpu_triangles, m_optix.gas->handle()}, {n_elements, 1, 1}, stream);
+//             m_optix.raytrace->invoke({rays_o_vec, rays_d_vec, gpu_triangles, m_optix.gas->handle()}, {n_elements, 1, 1}, stream);
 //         } else
 // #endif //NGP_OPTIX
         {
             linear_kernel(raytrace_kernel, 0, stream,
                 n_elements,
-                gpu_positions,
-                gpu_directions,
+                rays_o_vec,
+                rays_d_vec,
+                positions_vec,
+                normals_vec,
+                depth,
                 m_nodes_gpu.data(),
                 gpu_triangles
             );
@@ -686,23 +691,27 @@ std::unique_ptr<TriangleBvh> TriangleBvh::make() {
 //     distances[i] = TriangleBvh4::unsigned_distance(positions[i], bvhnodes, triangles, max_distance*max_distance);
 // }
 
-__global__ void raytrace_kernel(uint32_t n_elements, Vector3f* __restrict__ positions, Vector3f* __restrict__ directions, const TriangleBvhNode* __restrict__ nodes, const Triangle* __restrict__ triangles) {
+__global__ void raytrace_kernel(uint32_t n_elements, const Vector3f* __restrict__ rays_o, const Vector3f* __restrict__ rays_d, Vector3f* __restrict__ positions, Vector3f* __restrict__ normals, float* __restrict__ depth, const TriangleBvhNode* __restrict__ nodes, const Triangle* __restrict__ triangles) {
     uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= n_elements) return;
 
-    Vector3f pos = positions[i];
-    Vector3f dir = directions[i];
+    Vector3f ro = rays_o[i];
+    Vector3f rd = rays_d[i];
 
-    auto p = TriangleBvh4::ray_intersect(pos, dir, nodes, triangles);
+    auto p = TriangleBvh4::ray_intersect(ro, rd, nodes, triangles);
+
+    // write depth
+    depth[i] = p.second;
  
     // intersection point is written back to positions.
-    positions[i] = pos + p.second * dir;
+    // non-intersect point reaches at most 10 depth
+    positions[i] = ro + p.second * rd;
 
     // face normal is written to directions.
     if (p.first >= 0) {
-        directions[i] = triangles[p.first].normal();
+        normals[i] = triangles[p.first].normal();
     } else {
-        directions[i].setZero();
+        normals[i].setZero();
     }
 
     // shall we write the depth? (p.second)
