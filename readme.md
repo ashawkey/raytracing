@@ -7,6 +7,7 @@ A CUDA Mesh RayTracer with BVH acceleration.
 ```python
 git clone https://github.com/ashawkey/raytracing
 cd raytracing
+pip install -r requirements.txt
 pip install .
 ```
 
