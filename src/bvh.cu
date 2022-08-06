@@ -600,7 +600,7 @@ public:
 
         m_nodes_gpu.resize_and_copy_from_host(m_nodes);
 
-        std::cout << "[INFO] Built TriangleBvh: nodes=" << m_nodes.size() << std::endl;
+        // std::cout << "[INFO] Built TriangleBvh: nodes=" << m_nodes.size() << std::endl;
     }
 
 //     void build_optix(const GPUMemory<Triangle>& triangles, cudaStream_t stream) override {

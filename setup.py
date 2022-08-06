@@ -5,7 +5,7 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 _src_path = os.path.dirname(os.path.abspath(__file__))
 
 # ref: https://github.com/sxyu/sdf/blob/master/setup.py
-def find_eigen(min_ver=(3, 2, 0)):
+def find_eigen(min_ver=(3, 3, 0)):
     """Helper to find or download the Eigen C++ library"""
     import re, os
     try_paths = [

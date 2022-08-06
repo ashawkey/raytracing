@@ -131,7 +131,7 @@ class GUI:
         self.render_buffer = np.zeros((self.W, self.H, 3), dtype=np.float32)
         self.need_update = True # camera moved, should reset accumulation
         
-        self.mode = 'position' # choose from ['position', 'depth', 'normal']
+        self.mode = 'normal' # choose from ['position', 'depth', 'normal']?
 
         # load mesh
         self.mesh = trimesh.load(opt.mesh)
@@ -174,10 +174,10 @@ class GUI:
 
             # outputs = self.trainer.test_gui(self.cam.pose, self.cam.intrinsics, self.W, self.H, self.bg_color, self.spp, self.downscale)
 
-            pose = torch.from_numpy(self.cam.pose).unsqueeze(0).to(self.device)
+            pose = torch.from_numpy(self.cam.pose).unsqueeze(0).cuda()
             rays = get_rays(pose, self.cam.intrinsics, self.H, self.W, -1)
-            rays_o = rays['rays_o']
-            rays_d = rays['rays_d']
+            rays_o = rays['rays_o'].contiguous().view(-1, 3)
+            rays_d = rays['rays_d'].contiguous().view(-1, 3)
             outputs = self.RT.trace(rays_o, rays_d)
             
             ender.record()
@@ -191,7 +191,6 @@ class GUI:
                 self.render_buffer = (self.render_buffer * self.spp + self.prepare_buffer(outputs)) / (self.spp + 1)
 
             dpg.set_value("_log_infer_time", f'{t:.4f}ms ({int(1000/t)} FPS)')
-            dpg.set_value("_log_resolution", f'{self.W}x{self.H}')
             dpg.set_value("_texture", self.render_buffer)
 
         
@@ -213,7 +212,7 @@ class GUI:
         dpg.set_primary_window("_primary_window", True)
 
         # control window
-        with dpg.window(label="Control", tag="_control_window", width=400, height=300):
+        with dpg.window(label="Control", tag="_control_window", width=300, height=200):
 
             # button theme
             with dpg.theme() as theme_button:
