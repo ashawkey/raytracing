@@ -136,6 +136,12 @@ class GUI:
         # load mesh
         self.mesh = trimesh.load(opt.mesh)
 
+        # normalize
+        center = self.mesh.vertices.mean(axis=0)
+        length = (self.mesh.vertices.max(axis=0) - self.mesh.vertices.min(axis=0)).max()
+        print(center, length)
+        self.mesh.vertices = (self.mesh.vertices - center) / (length + 1e-5)
+
         # prepare raytracer
         self.RT = raytracing.RayTracer(self.mesh.vertices, self.mesh.faces)
 
