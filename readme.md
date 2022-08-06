@@ -35,7 +35,9 @@ RT = raytracing.RayTracer(mesh.vertices, mesh.faces) # build with numpy.ndarray
 
 # get rays
 rays_o, rays_d = get_ray(pose, intrinsics, H, W) # [N, 3], [N, 3], query with torch.Tensor (on cuda)
-intersections, normals = RT.trace(rays_o, rays_d) # [N, 3], [N, 3]
+
+# query ray-mesh intersection
+intersections, face_normals, depth = RT.trace(rays_o, rays_d) # [N, 3], [N, 3]
 ```
 
 
