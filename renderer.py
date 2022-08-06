@@ -118,6 +118,7 @@ def get_rays(poses, intrinsics, H, W, N=-1, error_map=None):
     results['rays_d'] = rays_d
 
     return results
+    
 
 class GUI:
     def __init__(self, opt, debug=True):
@@ -134,13 +135,13 @@ class GUI:
         self.mode = 'normal' # choose from ['position', 'depth', 'normal']?
 
         # load mesh
-        self.mesh = trimesh.load(opt.mesh)
+        self.mesh = trimesh.load(opt.mesh, force='mesh', skip_material=True)
 
         # normalize
         center = self.mesh.vertices.mean(axis=0)
         length = (self.mesh.vertices.max(axis=0) - self.mesh.vertices.min(axis=0)).max()
-        print(center, length)
         self.mesh.vertices = (self.mesh.vertices - center) / (length + 1e-5)
+        print(f'[INFO] load mesh {self.mesh.vertices.shape}, {self.mesh.faces.shape}')
 
         # prepare raytracer
         self.RT = raytracing.RayTracer(self.mesh.vertices, self.mesh.faces)

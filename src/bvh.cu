@@ -466,7 +466,7 @@ public:
     //     }
     // }
 
-	void ray_trace_gpu(uint32_t n_elements, float* gpu_positions_raw, float* gpu_directions_raw, const Triangle* gpu_triangles, cudaStream_t stream) override {
+    void ray_trace_gpu(uint32_t n_elements, float* gpu_positions_raw, float* gpu_directions_raw, const Triangle* gpu_triangles, cudaStream_t stream) override {
 
         // cast float* to Vector3f*
         Vector3f* gpu_positions = (Vector3f*)(gpu_positions_raw);
@@ -687,21 +687,21 @@ std::unique_ptr<TriangleBvh> TriangleBvh::make() {
 // }
 
 __global__ void raytrace_kernel(uint32_t n_elements, Vector3f* __restrict__ positions, Vector3f* __restrict__ directions, const TriangleBvhNode* __restrict__ nodes, const Triangle* __restrict__ triangles) {
-	uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
-	if (i >= n_elements) return;
+    uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n_elements) return;
 
-	Vector3f pos = positions[i];
-	Vector3f dir = directions[i];
+    Vector3f pos = positions[i];
+    Vector3f dir = directions[i];
 
-	auto p = TriangleBvh4::ray_intersect(pos, dir, nodes, triangles);
+    auto p = TriangleBvh4::ray_intersect(pos, dir, nodes, triangles);
  
     // intersection point is written back to positions.
-	positions[i] = pos + p.second * dir;
+    positions[i] = pos + p.second * dir;
 
     // face normal is written to directions.
-	if (p.first >= 0) {
-		directions[i] = triangles[p.first].normal();
-	} else {
+    if (p.first >= 0) {
+        directions[i] = triangles[p.first].normal();
+    } else {
         directions[i].setZero();
     }
 
