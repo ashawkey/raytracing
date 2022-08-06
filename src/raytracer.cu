@@ -43,12 +43,13 @@ public:
 	}
 
 	// accept torch tensor (gpu) to init
-	void trace(const at::Tensor rays_o, const at::Tensor rays_d) {
-		
+	void trace(at::Tensor rays_o, at::Tensor rays_d) {
+
+		// must be contiguous, float, cuda, shape [N, 3]. check in torch side.
+
 		const uint32_t n_elements = rays_o.size(0);
 		cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-		// void ray_trace_gpu(uint32_t n_elements, const float* gpu_positions, const float* gpu_directions, const Triangle* gpu_triangles, cudaStream_t stream) override {
 		triangle_bvh->ray_trace_gpu(n_elements, rays_o.data_ptr<float>(), rays_d.data_ptr<float>(), triangles_gpu.data(), stream);
 	}
 

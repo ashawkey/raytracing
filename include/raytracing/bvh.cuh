@@ -42,9 +42,6 @@ private:
 using FixedIntStack = FixedStack<int>;
 
 
-// __host__ __device__ std::pair<int, float> trianglebvh_ray_intersect(const Eigen::Vector3f& ro, const Eigen::Vector3f& rd, const TriangleBvhNode* __restrict__ bvhnodes, const Triangle* __restrict__ triangles);
-
-
 class TriangleBvh {
 
 protected:

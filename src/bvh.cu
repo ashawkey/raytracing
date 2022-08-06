@@ -25,6 +25,7 @@
 
 #include <stack>
 #include <iostream>
+#include <cstdio>
 
 using namespace Eigen;
 using namespace raytracing;
@@ -467,9 +468,9 @@ public:
 
 	void ray_trace_gpu(uint32_t n_elements, float* gpu_positions_raw, float* gpu_directions_raw, const Triangle* gpu_triangles, cudaStream_t stream) override {
 
-        // float* to Vector3f* (row-major)
-        Vector3f* gpu_positions = (Vector3f*)gpu_positions_raw;
-        Vector3f* gpu_directions = (Vector3f*)gpu_directions_raw;
+        // cast float* to Vector3f*
+        Vector3f* gpu_positions = (Vector3f*)(gpu_positions_raw);
+        Vector3f* gpu_directions = (Vector3f*)(gpu_directions_raw);
 
 // #ifdef NGP_OPTIX
 //         if (m_optix.available) {
@@ -599,8 +600,7 @@ public:
 
         m_nodes_gpu.resize_and_copy_from_host(m_nodes);
 
-        // tlog::success() << "Built TriangleBvh: nodes=" << m_nodes.size();
-        std::cout << "Built TriangleBvh: nodes=" << m_nodes.size() << std::endl;
+        std::cout << "[INFO] Built TriangleBvh: nodes=" << m_nodes.size() << std::endl;
     }
 
 //     void build_optix(const GPUMemory<Triangle>& triangles, cudaStream_t stream) override {
@@ -690,18 +690,23 @@ __global__ void raytrace_kernel(uint32_t n_elements, Vector3f* __restrict__ posi
 	uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
 	if (i >= n_elements) return;
 
-	auto pos = positions[i];
-	auto dir = directions[i];
+	Vector3f pos = positions[i];
+	Vector3f dir = directions[i];
 
 	auto p = TriangleBvh4::ray_intersect(pos, dir, nodes, triangles);
  
-    // intersection point is written back to positions!
+    // intersection point is written back to positions.
 	positions[i] = pos + p.second * dir;
 
-    // face normal ? no need...
+    // face normal is written to directions.
 	if (p.first >= 0) {
 		directions[i] = triangles[p.first].normal();
-	}
+	} else {
+        directions[i].setZero();
+    }
+
+    // shall we write the depth? (p.second)
+
 }
     
 }
