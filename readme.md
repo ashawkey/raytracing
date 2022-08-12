@@ -15,7 +15,7 @@ pip install .
 Example for a mesh normal renderer:
 
 ```bash
-python renderer.py # default, show a create_dodecahedron
+python renderer.py # default, show a dodecahedron
 python renderer.py --mesh example.ply # show any mesh file
 ```
 
