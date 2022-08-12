@@ -15,7 +15,8 @@ pip install .
 Example for a mesh normal renderer:
 
 ```bash
-python renderer.py example.ply
+python renderer.py # default, show a create_dodecahedron
+python renderer.py --mesh example.ply # show any mesh file
 ```
 
 https://user-images.githubusercontent.com/25863658/183238748-7ac82808-6cd3-4bb6-867a-9c22f8e3f7dd.mp4
@@ -37,7 +38,7 @@ RT = raytracing.RayTracer(mesh.vertices, mesh.faces) # build with numpy.ndarray
 rays_o, rays_d = get_ray(pose, intrinsics, H, W) # [N, 3], [N, 3], query with torch.Tensor (on cuda)
 
 # query ray-mesh intersection
-intersections, face_normals, depth = RT.trace(rays_o, rays_d) # [N, 3], [N, 3]
+intersections, face_normals, depth = RT.trace(rays_o, rays_d) # [N, 3], [N, 3], [N,]
 ```
 
 

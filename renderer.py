@@ -1,4 +1,5 @@
 import argparse
+from venv import create
 import numpy as np
 import trimesh
 
@@ -7,6 +8,76 @@ import raytracing
 
 import dearpygui.dearpygui as dpg
 from scipy.spatial.transform import Rotation as R
+
+def create_dodecahedron(radius=1, center=np.array([0, 0, 0])):
+
+    vertices = np.array([
+        -0.57735,  -0.57735,  0.57735,
+        0.934172,  0.356822,  0,
+        0.934172,  -0.356822,  0,
+        -0.934172,  0.356822,  0,
+        -0.934172,  -0.356822,  0,
+        0,  0.934172,  0.356822,
+        0,  0.934172,  -0.356822,
+        0.356822,  0,  -0.934172,
+        -0.356822,  0,  -0.934172,
+        0,  -0.934172,  -0.356822,
+        0,  -0.934172,  0.356822,
+        0.356822,  0,  0.934172,
+        -0.356822,  0,  0.934172,
+        0.57735,  0.57735,  -0.57735,
+        0.57735,  0.57735,  0.57735,
+        -0.57735,  0.57735,  -0.57735,
+        -0.57735,  0.57735,  0.57735,
+        0.57735,  -0.57735,  -0.57735,
+        0.57735,  -0.57735,  0.57735,
+        -0.57735,  -0.57735,  -0.57735,
+        ]).reshape((-1,3), order="C")
+
+    faces = np.array([
+        19, 3, 2,
+        12, 19, 2,
+        15, 12, 2,
+        8, 14, 2,
+        18, 8, 2,
+        3, 18, 2,
+        20, 5, 4,
+        9, 20, 4,
+        16, 9, 4,
+        13, 17, 4,
+        1, 13, 4,
+        5, 1, 4,
+        7, 16, 4,
+        6, 7, 4,
+        17, 6, 4,
+        6, 15, 2,
+        7, 6, 2,
+        14, 7, 2,
+        10, 18, 3,
+        11, 10, 3,
+        19, 11, 3,
+        11, 1, 5,
+        10, 11, 5,
+        20, 10, 5,
+        20, 9, 8,
+        10, 20, 8,
+        18, 10, 8,
+        9, 16, 7,
+        8, 9, 7,
+        14, 8, 7,
+        12, 15, 6,
+        13, 12, 6,
+        17, 13, 6,
+        13, 1, 11,
+        12, 13, 11,
+        19, 12, 11,
+        ]).reshape((-1, 3), order="C")-1
+
+    length = np.linalg.norm(vertices, axis=1).reshape((-1, 1))
+    vertices = vertices / length * radius + center
+
+    return trimesh.Trimesh(vertices=vertices, faces=faces)
+
 
 class OrbitCamera:
     def __init__(self, W, H, r=2, fovy=60):
@@ -41,8 +112,8 @@ class OrbitCamera:
     def orbit(self, dx, dy):
         # rotate along camera up/side axis!
         side = self.rot.as_matrix()[:3, 0] # why this is side --> ? # already normalized.
-        rotvec_x = self.up * np.radians(-0.1 * dx)
-        rotvec_y = side * np.radians(-0.1 * dy)
+        rotvec_x = self.up * np.radians(-0.05 * dx)
+        rotvec_y = side * np.radians(-0.05 * dy)
         self.rot = R.from_rotvec(rotvec_x) * R.from_rotvec(rotvec_y) * self.rot
 
     def scale(self, delta):
@@ -135,7 +206,10 @@ class GUI:
         self.mode = 'normal' # choose from ['position', 'depth', 'normal']?
 
         # load mesh
-        self.mesh = trimesh.load(opt.mesh, force='mesh', skip_material=True)
+        if opt.mesh == '':
+            self.mesh = create_dodecahedron()
+        else:
+            self.mesh = trimesh.load(opt.mesh, force='mesh', skip_material=True)
 
         # normalize
         center = self.mesh.vertices.mean(axis=0)
@@ -357,7 +431,7 @@ class GUI:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('mesh', type=str)
+    parser.add_argument('--mesh', default='', type=str)
     parser.add_argument('--W', type=int, default=1920, help="GUI width")
     parser.add_argument('--H', type=int, default=1080, help="GUI height")
     parser.add_argument('--radius', type=float, default=5, help="default GUI camera radius from center")
